@@ -7,12 +7,12 @@ import (
 	"log"
 	"net"
 	"os"
-	"starter-kit/infrastructure/database"
-	"starter-kit/internal/router"
-	"starter-kit/pkg/config"
-	"starter-kit/pkg/logger"
-	"starter-kit/utils"
 	"strings"
+	"teamleader-management/infrastructure/database"
+	"teamleader-management/internal/router"
+	"teamleader-management/pkg/config"
+	"teamleader-management/pkg/logger"
+	"teamleader-management/utils"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -87,6 +87,7 @@ func main() {
 	routes.RoleRoutes()
 	routes.PermissionRoutes()
 	routes.MenuRoutes()
+	routes.PersonRoutes()
 
 	// Register session routes if Redis is available
 	if redisClient != nil {

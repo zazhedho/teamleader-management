@@ -1,9 +1,9 @@
 package interfaceuser
 
 import (
-	domainuser "starter-kit/internal/domain/user"
-	"starter-kit/internal/dto"
-	"starter-kit/pkg/filter"
+	domainuser "teamleader-management/internal/domain/user"
+	"teamleader-management/internal/dto"
+	"teamleader-management/pkg/filter"
 )
 
 type ServiceUserInterface interface {

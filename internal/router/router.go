@@ -7,27 +7,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"starter-kit/infrastructure/database"
-	menuHandler "starter-kit/internal/handlers/http/menu"
-	permissionHandler "starter-kit/internal/handlers/http/permission"
-	roleHandler "starter-kit/internal/handlers/http/role"
-	sessionHandler "starter-kit/internal/handlers/http/session"
-	userHandler "starter-kit/internal/handlers/http/user"
-	authRepo "starter-kit/internal/repositories/auth"
-	menuRepo "starter-kit/internal/repositories/menu"
-	permissionRepo "starter-kit/internal/repositories/permission"
-	roleRepo "starter-kit/internal/repositories/role"
-	sessionRepo "starter-kit/internal/repositories/session"
-	userRepo "starter-kit/internal/repositories/user"
-	menuSvc "starter-kit/internal/services/menu"
-	permissionSvc "starter-kit/internal/services/permission"
-	roleSvc "starter-kit/internal/services/role"
-	sessionSvc "starter-kit/internal/services/session"
-	userSvc "starter-kit/internal/services/user"
-	"starter-kit/middlewares"
-	"starter-kit/pkg/logger"
-	"starter-kit/pkg/security"
-	"starter-kit/utils"
+	"teamleader-management/infrastructure/database"
+	menuHandler "teamleader-management/internal/handlers/http/menu"
+	permissionHandler "teamleader-management/internal/handlers/http/permission"
+	personHandler "teamleader-management/internal/handlers/http/person"
+	roleHandler "teamleader-management/internal/handlers/http/role"
+	sessionHandler "teamleader-management/internal/handlers/http/session"
+	userHandler "teamleader-management/internal/handlers/http/user"
+	authRepo "teamleader-management/internal/repositories/auth"
+	menuRepo "teamleader-management/internal/repositories/menu"
+	permissionRepo "teamleader-management/internal/repositories/permission"
+	personRepo "teamleader-management/internal/repositories/person"
+	roleRepo "teamleader-management/internal/repositories/role"
+	sessionRepo "teamleader-management/internal/repositories/session"
+	userRepo "teamleader-management/internal/repositories/user"
+	menuSvc "teamleader-management/internal/services/menu"
+	permissionSvc "teamleader-management/internal/services/permission"
+	personSvc "teamleader-management/internal/services/person"
+	roleSvc "teamleader-management/internal/services/role"
+	sessionSvc "teamleader-management/internal/services/session"
+	userSvc "teamleader-management/internal/services/user"
+	"teamleader-management/middlewares"
+	"teamleader-management/pkg/logger"
+	"teamleader-management/pkg/security"
+	"teamleader-management/utils"
 )
 
 type Routes struct {
@@ -59,7 +62,8 @@ func (r *Routes) UserRoutes() {
 	repo := userRepo.NewUserRepo(r.DB)
 	rRepo := roleRepo.NewRoleRepo(r.DB)
 	pRepo := permissionRepo.NewPermissionRepo(r.DB)
-	uc := userSvc.NewUserService(repo, blacklistRepo, rRepo, pRepo)
+	prRepo := personRepo.NewPersonRepo(r.DB)
+	uc := userSvc.NewUserService(repo, blacklistRepo, rRepo, pRepo, prRepo)
 
 	// Setup login limiter if Redis is available
 	redisClient := database.GetRedisClient()
@@ -186,6 +190,25 @@ func (r *Routes) MenuRoutes() {
 		menu.GET("/:id", mdw.PermissionMiddleware("menus", "view"), h.GetByID)
 		menu.PUT("/:id", mdw.PermissionMiddleware("menus", "update"), h.Update)
 		menu.DELETE("/:id", mdw.PermissionMiddleware("menus", "delete"), h.Delete)
+	}
+}
+
+func (r *Routes) PersonRoutes() {
+	repo := personRepo.NewPersonRepo(r.DB)
+	svc := personSvc.NewPersonService(repo)
+	h := personHandler.NewPersonHandler(svc)
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	pRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
+
+	r.App.GET("/api/persons", mdw.AuthMiddleware(), mdw.PermissionMiddleware("persons", "list"), h.GetAll)
+
+	person := r.App.Group("/api/person").Use(mdw.AuthMiddleware())
+	{
+		person.POST("", mdw.PermissionMiddleware("persons", "create"), h.Create)
+		person.GET("/:id", mdw.PermissionMiddleware("persons", "view"), h.GetByID)
+		person.PUT("/:id", mdw.PermissionMiddleware("persons", "update"), h.Update)
+		person.DELETE("/:id", mdw.PermissionMiddleware("persons", "delete"), h.Delete)
 	}
 }
 

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"starter-kit/pkg/logger"
-	"starter-kit/utils"
 	"strings"
+	"teamleader-management/pkg/logger"
+	"teamleader-management/utils"
 	"time"
 
 	"github.com/google/uuid"

@@ -13,7 +13,15 @@ const (
 const (
 	RoleSuperAdmin = "superadmin"
 	RoleAdmin      = "admin"
-	RoleStaff      = "staff"
-	RoleMember     = "member"
+	RoleTL         = "teamleader"
+	RoleSM         = "salesman"
 	RoleViewer     = "viewer"
 )
+
+var AllowedRoles = map[string]bool{
+	RoleSuperAdmin: true,
+	RoleAdmin:      true,
+	RoleTL:         true,
+	RoleViewer:     true,
+	RoleSM:         true,
+}

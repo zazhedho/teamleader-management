@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	domainuser "starter-kit/internal/domain/user"
 	"strings"
+	domainuser "teamleader-management/internal/domain/user"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,14 +16,21 @@ type AppClaims struct {
 	UserId   string `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
+	PersonId string `json:"person_id,omitempty"`
 	*jwt.RegisteredClaims
 }
 
 func GenerateJwt(user *domainuser.Users, logId string) (string, error) {
+	personId := ""
+	if user.PersonId != nil {
+		personId = fmt.Sprintf("%s", *user.PersonId)
+	}
+
 	claims := AppClaims{
 		UserId:   user.Id,
 		Username: user.Name,
 		Role:     user.Role,
+		PersonId: personId,
 		RegisteredClaims: &jwt.RegisteredClaims{
 			ID:        logId,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(GetEnv("JWT_EXP", 24).(int)))),

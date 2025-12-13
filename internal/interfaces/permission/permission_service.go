@@ -1,9 +1,9 @@
 package interfacepermission
 
 import (
-	domainpermission "starter-kit/internal/domain/permission"
-	"starter-kit/internal/dto"
-	"starter-kit/pkg/filter"
+	domainpermission "teamleader-management/internal/domain/permission"
+	"teamleader-management/internal/dto"
+	"teamleader-management/pkg/filter"
 )
 
 type ServicePermissionInterface interface {

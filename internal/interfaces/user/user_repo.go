@@ -1,8 +1,8 @@
 package interfaceuser
 
 import (
-	domainuser "starter-kit/internal/domain/user"
-	"starter-kit/pkg/filter"
+	domainuser "teamleader-management/internal/domain/user"
+	"teamleader-management/pkg/filter"
 )
 
 type RepoUserInterface interface {

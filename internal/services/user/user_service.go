@@ -3,16 +3,17 @@ package serviceuser
 import (
 	"errors"
 	"regexp"
-	domainauth "starter-kit/internal/domain/auth"
-	domainuser "starter-kit/internal/domain/user"
-	"starter-kit/internal/dto"
-	interfaceauth "starter-kit/internal/interfaces/auth"
-	interfacepermission "starter-kit/internal/interfaces/permission"
-	interfacerole "starter-kit/internal/interfaces/role"
-	interfaceuser "starter-kit/internal/interfaces/user"
-	"starter-kit/pkg/filter"
-	"starter-kit/utils"
 	"strings"
+	domainauth "teamleader-management/internal/domain/auth"
+	domainuser "teamleader-management/internal/domain/user"
+	"teamleader-management/internal/dto"
+	interfaceauth "teamleader-management/internal/interfaces/auth"
+	interfacepermission "teamleader-management/internal/interfaces/permission"
+	interfaceperson "teamleader-management/internal/interfaces/person"
+	interfacerole "teamleader-management/internal/interfaces/role"
+	interfaceuser "teamleader-management/internal/interfaces/user"
+	"teamleader-management/pkg/filter"
+	"teamleader-management/utils"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,14 +24,16 @@ type ServiceUser struct {
 	BlacklistRepo  interfaceauth.RepoAuthInterface
 	RoleRepo       interfacerole.RepoRoleInterface
 	PermissionRepo interfacepermission.RepoPermissionInterface
+	PersonRepo     interfaceperson.RepoPersonInterface
 }
 
-func NewUserService(userRepo interfaceuser.RepoUserInterface, blacklistRepo interfaceauth.RepoAuthInterface, roleRepo interfacerole.RepoRoleInterface, permissionRepo interfacepermission.RepoPermissionInterface) *ServiceUser {
+func NewUserService(userRepo interfaceuser.RepoUserInterface, blacklistRepo interfaceauth.RepoAuthInterface, roleRepo interfacerole.RepoRoleInterface, permissionRepo interfacepermission.RepoPermissionInterface, personRepo interfaceperson.RepoPersonInterface) *ServiceUser {
 	return &ServiceUser{
 		UserRepo:       userRepo,
 		BlacklistRepo:  blacklistRepo,
 		RoleRepo:       roleRepo,
 		PermissionRepo: permissionRepo,
+		PersonRepo:     personRepo,
 	}
 }
 
@@ -144,6 +147,20 @@ func (s *ServiceUser) AdminCreateUser(req dto.AdminCreateUser, creatorRole strin
 		return domainuser.Users{}, errors.New("only superadmin can create superadmin users")
 	}
 
+	if req.PersonID != nil {
+		person, err := s.PersonRepo.GetByID(*req.PersonID)
+		if err != nil {
+			return domainuser.Users{}, errors.New("person not found for given person_id")
+		}
+
+		if roleName == utils.RoleTL && person.Role != utils.RoleTL {
+			return domainuser.Users{}, errors.New("person role must be teamleader")
+		}
+	}
+	if roleName == utils.RoleTL && req.PersonID == nil {
+		return domainuser.Users{}, errors.New("person_id is required for teamleader users")
+	}
+
 	var roleId *string
 	roleEntity, err := s.RoleRepo.GetByName(roleName)
 	if err == nil && roleEntity.Id != "" {
@@ -160,6 +177,7 @@ func (s *ServiceUser) AdminCreateUser(req dto.AdminCreateUser, creatorRole strin
 		Password:  string(hashedPwd),
 		Role:      roleName,
 		RoleId:    roleId,
+		PersonId:  req.PersonID,
 		CreatedAt: time.Now(),
 	}
 
@@ -225,6 +243,7 @@ func (s *ServiceUser) GetUserByAuth(id string) (map[string]interface{}, error) {
 			"email":       user.Email,
 			"phone":       user.Phone,
 			"role":        user.Role,
+			"person_id":   user.PersonId,
 			"permissions": []string{},
 			"created_at":  user.CreatedAt,
 			"updated_at":  user.UpdatedAt,
@@ -239,6 +258,7 @@ func (s *ServiceUser) GetUserByAuth(id string) (map[string]interface{}, error) {
 			"email":       user.Email,
 			"phone":       user.Phone,
 			"role":        user.Role,
+			"person_id":   user.PersonId,
 			"permissions": []string{},
 			"created_at":  user.CreatedAt,
 			"updated_at":  user.UpdatedAt,
@@ -259,6 +279,7 @@ func (s *ServiceUser) GetUserByAuth(id string) (map[string]interface{}, error) {
 		"email":       user.Email,
 		"phone":       user.Phone,
 		"role":        user.Role,
+		"person_id":   user.PersonId,
 		"permissions": permissionNames,
 		"created_at":  user.CreatedAt,
 		"updated_at":  user.UpdatedAt,
@@ -308,6 +329,8 @@ func (s *ServiceUser) Update(id, role string, req dto.UserUpdate) (domainuser.Us
 		data.Email = req.Email
 	}
 
+	targetRole := data.Role
+
 	if role == utils.RoleAdmin && strings.TrimSpace(req.Role) != "" {
 		newRoleName := strings.ToLower(req.Role)
 
@@ -316,6 +339,7 @@ func (s *ServiceUser) Update(id, role string, req dto.UserUpdate) (domainuser.Us
 		}
 
 		data.Role = newRoleName
+		targetRole = newRoleName
 
 		roleEntity, err := s.RoleRepo.GetByName(newRoleName)
 		if err == nil && roleEntity.Id != "" {
@@ -328,6 +352,7 @@ func (s *ServiceUser) Update(id, role string, req dto.UserUpdate) (domainuser.Us
 	if role == utils.RoleSuperAdmin && strings.TrimSpace(req.Role) != "" {
 		newRoleName := strings.ToLower(req.Role)
 		data.Role = newRoleName
+		targetRole = newRoleName
 
 		roleEntity, err := s.RoleRepo.GetByName(newRoleName)
 		if err == nil && roleEntity.Id != "" {
@@ -336,6 +361,32 @@ func (s *ServiceUser) Update(id, role string, req dto.UserUpdate) (domainuser.Us
 			data.RoleId = nil
 		}
 	}
+
+	newPersonID := data.PersonId
+	if req.PersonID != nil {
+		if strings.TrimSpace(*req.PersonID) == "" {
+			newPersonID = nil
+		} else {
+			person, err := s.PersonRepo.GetByID(*req.PersonID)
+			if err != nil {
+				return domainuser.Users{}, errors.New("person not found for given person_id")
+			}
+			if targetRole == utils.RoleTL && person.Role != utils.RoleTL {
+				return domainuser.Users{}, errors.New("person role must be teamleader for teamleader users")
+			}
+			newPersonID = req.PersonID
+		}
+	}
+
+	if targetRole == utils.RoleTL && newPersonID == nil {
+		return domainuser.Users{}, errors.New("person_id is required for teamleader users")
+	}
+
+	if targetRole != utils.RoleTL {
+		newPersonID = nil
+	}
+
+	data.PersonId = newPersonID
 
 	if err = s.UserRepo.Update(data); err != nil {
 		return domainuser.Users{}, err

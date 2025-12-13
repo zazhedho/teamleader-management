@@ -2,9 +2,9 @@ package repositoryuser
 
 import (
 	"fmt"
-	domainuser "starter-kit/internal/domain/user"
-	interfaceuser "starter-kit/internal/interfaces/user"
-	"starter-kit/pkg/filter"
+	domainuser "teamleader-management/internal/domain/user"
+	interfaceuser "teamleader-management/internal/interfaces/user"
+	"teamleader-management/pkg/filter"
 
 	"gorm.io/gorm"
 )
@@ -80,6 +80,7 @@ func (r *repo) GetAll(params filter.BaseParams) (ret []domainuser.Users, totalDa
 			"email":      true,
 			"phone":      true,
 			"role":       true,
+			"person_id":  true,
 			"created_at": true,
 			"updated_at": true,
 		}

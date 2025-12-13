@@ -3,10 +3,10 @@ package servicesession
 import (
 	"context"
 	"fmt"
-	domainsession "starter-kit/internal/domain/session"
-	domainuser "starter-kit/internal/domain/user"
-	interfacesession "starter-kit/internal/interfaces/session"
-	"starter-kit/utils"
+	domainsession "teamleader-management/internal/domain/session"
+	domainuser "teamleader-management/internal/domain/user"
+	interfacesession "teamleader-management/internal/interfaces/session"
+	"teamleader-management/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"

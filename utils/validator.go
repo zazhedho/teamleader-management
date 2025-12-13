@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"starter-kit/pkg/response"
+	"teamleader-management/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -75,4 +75,11 @@ func ValidateUUID(ctx *gin.Context, logID uuid.UUID) (string, error) {
 	}
 
 	return id, nil
+}
+
+func ValidateRole(role string) error {
+	if !AllowedRoles[role] {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+	return nil
 }

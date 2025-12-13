@@ -18,6 +18,7 @@ type Users struct {
 	Password  string         `json:"-" gorm:"column:password"`
 	Role      string         `json:"role,omitempty" gorm:"column:role"`
 	RoleId    *string        `json:"role_id,omitempty" gorm:"column:role_id"`
+	PersonId  *string        `json:"person_id,omitempty" gorm:"column:person_id"`
 	CreatedAt time.Time      `json:"created_at,omitempty" gorm:"column:created_at"`
 	UpdatedAt *time.Time     `json:"updated_at,omitempty" gorm:"column:updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`

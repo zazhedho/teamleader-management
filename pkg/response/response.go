@@ -3,7 +3,7 @@ package response
 import (
 	"math"
 	"net/http"
-	"starter-kit/pkg/messages"
+	"teamleader-management/pkg/messages"
 
 	"github.com/google/uuid"
 )

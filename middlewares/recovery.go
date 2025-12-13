@@ -3,10 +3,10 @@ package middlewares
 import (
 	"fmt"
 	"net/http"
-	"starter-kit/pkg/logger"
-	"starter-kit/pkg/messages"
-	"starter-kit/pkg/response"
-	"starter-kit/utils"
+	"teamleader-management/pkg/logger"
+	"teamleader-management/pkg/messages"
+	"teamleader-management/pkg/response"
+	"teamleader-management/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
