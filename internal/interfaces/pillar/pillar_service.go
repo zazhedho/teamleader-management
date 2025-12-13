@@ -7,9 +7,9 @@ import (
 )
 
 type ServicePillarInterface interface {
-	Create(req dto.PillarCreate) (domainpillar.Pillar, error)
+	Create(req dto.PillarCreate, actorId string) (domainpillar.Pillar, error)
 	GetByID(id string) (domainpillar.Pillar, error)
 	GetAll(params filter.BaseParams) ([]domainpillar.Pillar, int64, error)
-	Update(id string, req dto.PillarUpdate) (domainpillar.Pillar, error)
+	Update(id string, req dto.PillarUpdate, actorId string) (domainpillar.Pillar, error)
 	Delete(id string) error
 }

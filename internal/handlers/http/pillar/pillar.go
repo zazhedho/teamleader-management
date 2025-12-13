@@ -38,7 +38,13 @@ func (h *PillarHandler) Create(ctx *gin.Context) {
 	}
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Request: %+v;", logPrefix, utils.JsonEncode(req)))
 
-	data, err := h.Service.Create(req)
+	authData := utils.GetAuthData(ctx)
+	actor := ""
+	if authData != nil {
+		actor = utils.InterfaceString(authData["user_id"])
+	}
+
+	data, err := h.Service.Create(req, actor)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Create; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)
@@ -113,7 +119,13 @@ func (h *PillarHandler) Update(ctx *gin.Context) {
 	}
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Request: %+v;", logPrefix, utils.JsonEncode(req)))
 
-	data, err := h.Service.Update(id, req)
+	authData := utils.GetAuthData(ctx)
+	actor := ""
+	if authData != nil {
+		actor = utils.InterfaceString(authData["user_id"])
+	}
+
+	data, err := h.Service.Update(id, req, actor)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Update; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)

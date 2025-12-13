@@ -18,6 +18,16 @@ const (
 	RoleViewer     = "viewer"
 )
 
+// Dataset types
+const (
+	DatasetQuiz          = "QUIZ"
+	DatasetLoginApple    = "LOGIN_APPLE"
+	DatasetSalesFLP      = "SALES_FLP"
+	DatasetPointApple    = "POINT_APPLE"
+	DatasetPointMyHero   = "POINT_MYHERO"
+	DatasetTotalProspect = "TOTAL_PROSPECTS"
+)
+
 var AllowedRoles = map[string]bool{
 	RoleSuperAdmin: true,
 	RoleAdmin:      true,

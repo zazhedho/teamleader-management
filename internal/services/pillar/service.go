@@ -3,6 +3,7 @@ package servicepillar
 import (
 	"errors"
 	"strings"
+	"time"
 
 	domainpillar "teamleader-management/internal/domain/pillar"
 	"teamleader-management/internal/dto"
@@ -19,7 +20,7 @@ func NewPillarService(repo interfacepillar.RepoPillarInterface) *ServicePillar {
 	return &ServicePillar{Repo: repo}
 }
 
-func (s *ServicePillar) Create(req dto.PillarCreate) (domainpillar.Pillar, error) {
+func (s *ServicePillar) Create(req dto.PillarCreate, actorId string) (domainpillar.Pillar, error) {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return domainpillar.Pillar{}, errors.New("name is required")
@@ -38,6 +39,8 @@ func (s *ServicePillar) Create(req dto.PillarCreate) (domainpillar.Pillar, error
 		Name:        name,
 		Description: req.Description,
 		Weight:      req.Weight,
+		CreatedAt:   time.Now(),
+		CreatedBy:   actorId,
 	}
 
 	if err := s.Repo.Store(entity); err != nil {
@@ -59,7 +62,7 @@ func (s *ServicePillar) GetAll(params filter.BaseParams) ([]domainpillar.Pillar,
 	return s.Repo.GetAll(params)
 }
 
-func (s *ServicePillar) Update(id string, req dto.PillarUpdate) (domainpillar.Pillar, error) {
+func (s *ServicePillar) Update(id string, req dto.PillarUpdate, actorId string) (domainpillar.Pillar, error) {
 	pillar, err := s.Repo.GetByID(id)
 	if err != nil {
 		return domainpillar.Pillar{}, err
@@ -86,6 +89,10 @@ func (s *ServicePillar) Update(id string, req dto.PillarUpdate) (domainpillar.Pi
 		}
 		pillar.Weight = *req.Weight
 	}
+
+	now := time.Now()
+	pillar.UpdatedAt = now
+	pillar.UpdatedBy = actorId
 
 	if err := s.Repo.Update(pillar); err != nil {
 		return domainpillar.Pillar{}, err

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"teamleader-management/infrastructure/database"
+	datasetHandler "teamleader-management/internal/handlers/http/dataset"
 	kpiHandler "teamleader-management/internal/handlers/http/kpiitem"
 	menuHandler "teamleader-management/internal/handlers/http/menu"
 	permissionHandler "teamleader-management/internal/handlers/http/permission"
@@ -17,14 +18,17 @@ import (
 	sessionHandler "teamleader-management/internal/handlers/http/session"
 	userHandler "teamleader-management/internal/handlers/http/user"
 	authRepo "teamleader-management/internal/repositories/auth"
+	datasetRepo "teamleader-management/internal/repositories/dataset"
 	kpiRepo "teamleader-management/internal/repositories/kpiitem"
 	menuRepo "teamleader-management/internal/repositories/menu"
+	metricRepo "teamleader-management/internal/repositories/metric"
 	permissionRepo "teamleader-management/internal/repositories/permission"
 	personRepo "teamleader-management/internal/repositories/person"
 	pillarRepo "teamleader-management/internal/repositories/pillar"
 	roleRepo "teamleader-management/internal/repositories/role"
 	sessionRepo "teamleader-management/internal/repositories/session"
 	userRepo "teamleader-management/internal/repositories/user"
+	datasetSvc "teamleader-management/internal/services/dataset"
 	kpiSvc "teamleader-management/internal/services/kpiitem"
 	menuSvc "teamleader-management/internal/services/menu"
 	permissionSvc "teamleader-management/internal/services/permission"
@@ -239,6 +243,29 @@ func (r *Routes) KPIItemRoutes() {
 		kpi.DELETE("/:id", mdw.PermissionMiddleware("kpi_items", "delete"), h.Delete)
 		kpi.POST("/target", mdw.PermissionMiddleware("kpi_items", "update"), h.UpsertPersonTarget)
 		kpi.DELETE("/target", mdw.PermissionMiddleware("kpi_items", "delete"), h.DeletePersonTarget)
+	}
+}
+
+func (r *Routes) DatasetRoutes() {
+	repo := datasetRepo.NewDatasetRepo(r.DB)
+	mRepo := metricRepo.NewMetricRepo(r.DB)
+	pRepo := personRepo.NewPersonRepo(r.DB)
+	svc := datasetSvc.NewDatasetService(repo)
+	processor := datasetSvc.NewProcessor(repo, mRepo, pRepo)
+	h := datasetHandler.NewDatasetHandler(svc, processor)
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	permRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, permRepo)
+
+	upload := r.App.Group("/api/admin/upload").Use(mdw.AuthMiddleware())
+	{
+		upload.POST("/:type", mdw.PermissionMiddleware("datasets", "create"), h.Upload)
+	}
+
+	ds := r.App.Group("/api/admin/datasets").Use(mdw.AuthMiddleware())
+	{
+		ds.GET("", mdw.PermissionMiddleware("datasets", "list"), h.List)
+		ds.PUT("/:id/status", mdw.PermissionMiddleware("datasets", "update"), h.UpdateStatus)
 	}
 }
 

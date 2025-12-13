@@ -89,6 +89,7 @@ func main() {
 	routes.MenuRoutes()
 	routes.PillarRoutes()
 	routes.KPIItemRoutes()
+	routes.DatasetRoutes()
 	routes.PersonRoutes()
 
 	// Register session routes if Redis is available

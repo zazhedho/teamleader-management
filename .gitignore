@@ -8,6 +8,7 @@ team-leader-development-program
 
 # Test binary
 *.test
+.cache
 
 # Output of the go coverage tool
 *.out
