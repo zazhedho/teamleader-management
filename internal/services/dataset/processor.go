@@ -57,6 +57,8 @@ func (p *Processor) ProcessStream(ds *domaindataset.DashboardDataset, data []byt
 		processErr = p.processQuiz(ds, data, actorId)
 	case utils.DatasetLoginApple:
 		processErr = p.processAppleLogin(ds, data, actorId)
+	case utils.DatasetSalesFLP:
+		processErr = p.processSalesFLP(ds, data, actorId)
 	default:
 		processErr = fmt.Errorf("dataset type %s not supported yet", ds.Type)
 	}
@@ -129,6 +131,7 @@ func (p *Processor) processQuiz(ds *domaindataset.DashboardDataset, data []byte,
 		result := domainmetric.QuizResult{
 			Id:         utils.CreateUUID(),
 			DatasetId:  ds.Id,
+			PeriodDate: ds.PeriodDate,
 			PersonId:   person.Id,
 			HondaId:    hondaId,
 			DealerCode: dealerCode,
@@ -192,6 +195,7 @@ func (p *Processor) processAppleLogin(ds *domaindataset.DashboardDataset, data [
 		login := domainmetric.AppleLogin{
 			Id:          utils.CreateUUID(),
 			DatasetId:   ds.Id,
+			PeriodDate:  ds.PeriodDate,
 			PersonId:    person.Id,
 			HondaId:     hondaId,
 			DealerCode:  dealerCode,
@@ -205,6 +209,66 @@ func (p *Processor) processAppleLogin(ds *domaindataset.DashboardDataset, data [
 	}
 
 	if err := p.MetricRepo.SaveAppleLogins(logins); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Processor) processSalesFLP(ds *domaindataset.DashboardDataset, data []byte, actorId string) error {
+	rows, err := file.ReadExcelRows(data, 0, 2)
+	if err != nil {
+		return err
+	}
+
+	entries := make([]domainmetric.SalesFLP, 0, len(rows)-1)
+	now := time.Now()
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 5 { // No, Honda ID, Kode Dealer, Nama Sales People, Sales
+			return fmt.Errorf("row %d has insufficient columns", i+1)
+		}
+
+		hondaId := strings.TrimSpace(row[1])
+		if hondaId == "" {
+			return fmt.Errorf("row %d missing Honda ID", i+1)
+		}
+		person, err := p.PersonRepo.GetByHondaID(hondaId)
+		if err != nil {
+			return fmt.Errorf("row %d person not found for honda_id %s", i+1, hondaId)
+		}
+
+		var dealerCode *string
+		if val := strings.TrimSpace(row[2]); val != "" {
+			dealerCode = &val
+		}
+
+		amountStr := strings.TrimSpace(row[4])
+		if amountStr == "" {
+			return fmt.Errorf("row %d sales amount is required", i+1)
+		}
+		amount, err := utils.ParseInt(amountStr)
+		if err != nil {
+			return fmt.Errorf("row %d invalid %s value: Sales", i+1, err)
+		}
+
+		entry := domainmetric.SalesFLP{
+			Id:         utils.CreateUUID(),
+			DatasetId:  ds.Id,
+			PeriodDate: ds.PeriodDate,
+			PersonId:   person.Id,
+			HondaId:    hondaId,
+			DealerCode: dealerCode,
+			Amount:     amount,
+			CreatedAt:  now,
+			CreatedBy:  actorId,
+		}
+		entries = append(entries, entry)
+	}
+
+	if err := p.MetricRepo.SaveSalesFLP(entries); err != nil {
 		return err
 	}
 

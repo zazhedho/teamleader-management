@@ -10,11 +10,11 @@ var AllowedDatasetTypes = map[string]bool{
 }
 
 var AllowedPeriodFrequencies = map[string]bool{
-	"DAILY":     true,
-	"WEEKLY":    true,
-	"MONTHLY":   true,
-	"QUARTERLY": true,
-	"YEARLY":    true,
+	PeriodDaily:     true,
+	PeriodWeekly:    true,
+	PeriodMonthly:   true,
+	PeriodQuarterly: true,
+	PeriodYearly:    true,
 }
 
 const (

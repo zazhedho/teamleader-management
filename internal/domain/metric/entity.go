@@ -7,13 +7,14 @@ import (
 )
 
 type QuizResult struct {
-	Id         string   `json:"id" gorm:"column:id;primaryKey"`
-	DatasetId  string   `json:"dataset_id" gorm:"column:dataset_id"`
-	PersonId   string   `json:"person_id" gorm:"column:person_id"`
-	HondaId    string   `json:"honda_id" gorm:"column:honda_id"`
-	DealerCode *string  `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
-	Score      *float64 `json:"score,omitempty" gorm:"column:score"`
-	PassStatus *string  `json:"pass_status,omitempty" gorm:"column:pass_status"`
+	Id         string    `json:"id" gorm:"column:id;primaryKey"`
+	DatasetId  string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate time.Time `json:"period_date" gorm:"column:period_date"`
+	PersonId   string    `json:"person_id" gorm:"column:person_id"`
+	HondaId    string    `json:"honda_id" gorm:"column:honda_id"`
+	DealerCode *string   `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
+	Score      *float64  `json:"score,omitempty" gorm:"column:score"`
+	PassStatus *string   `json:"pass_status,omitempty" gorm:"column:pass_status"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	CreatedBy string         `json:"created_by" gorm:"column:created_by"`
@@ -26,6 +27,7 @@ type QuizResult struct {
 type AppleLogin struct {
 	Id          string    `json:"id" gorm:"column:id;primaryKey"`
 	DatasetId   string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate  time.Time `json:"period_date" gorm:"column:period_date"`
 	PersonId    string    `json:"person_id" gorm:"column:person_id"`
 	HondaId     string    `json:"honda_id" gorm:"column:honda_id"`
 	DealerCode  *string   `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
@@ -42,12 +44,13 @@ type AppleLogin struct {
 }
 
 type SalesFLP struct {
-	Id         string  `json:"id" gorm:"column:id;primaryKey"`
-	DatasetId  string  `json:"dataset_id" gorm:"column:dataset_id"`
-	PersonId   string  `json:"person_id" gorm:"column:person_id"`
-	HondaId    string  `json:"honda_id" gorm:"column:honda_id"`
-	DealerCode *string `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
-	Amount     float64 `json:"amount" gorm:"column:flp_amount"`
+	Id         string    `json:"id" gorm:"column:id;primaryKey"`
+	DatasetId  string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate time.Time `json:"period_date" gorm:"column:period_date"`
+	PersonId   string    `json:"person_id" gorm:"column:person_id"`
+	HondaId    string    `json:"honda_id" gorm:"column:honda_id"`
+	DealerCode *string   `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
+	Amount     int       `json:"amount" gorm:"column:flp_amount"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	CreatedBy string         `json:"created_by" gorm:"column:created_by"`
@@ -58,12 +61,13 @@ type SalesFLP struct {
 }
 
 type ApplePoint struct {
-	Id         string  `json:"id" gorm:"column:id;primaryKey"`
-	DatasetId  string  `json:"dataset_id" gorm:"column:dataset_id"`
-	PersonId   string  `json:"person_id" gorm:"column:person_id"`
-	HondaId    string  `json:"honda_id" gorm:"column:honda_id"`
-	DealerCode *string `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
-	Points     int     `json:"points" gorm:"column:points"`
+	Id         string    `json:"id" gorm:"column:id;primaryKey"`
+	DatasetId  string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate time.Time `json:"period_date" gorm:"column:period_date"`
+	PersonId   string    `json:"person_id" gorm:"column:person_id"`
+	HondaId    string    `json:"honda_id" gorm:"column:honda_id"`
+	DealerCode *string   `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
+	Points     int       `json:"points" gorm:"column:points"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	CreatedBy string         `json:"created_by" gorm:"column:created_by"`
@@ -74,12 +78,13 @@ type ApplePoint struct {
 }
 
 type MyHeroPoint struct {
-	Id         string  `json:"id" gorm:"column:id;primaryKey"`
-	DatasetId  string  `json:"dataset_id" gorm:"column:dataset_id"`
-	PersonId   string  `json:"person_id" gorm:"column:person_id"`
-	HondaId    string  `json:"honda_id" gorm:"column:honda_id"`
-	DealerCode *string `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
-	Points     int     `json:"points" gorm:"column:points"`
+	Id         string    `json:"id" gorm:"column:id;primaryKey"`
+	DatasetId  string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate time.Time `json:"period_date" gorm:"column:period_date"`
+	PersonId   string    `json:"person_id" gorm:"column:person_id"`
+	HondaId    string    `json:"honda_id" gorm:"column:honda_id"`
+	DealerCode *string   `json:"dealer_code,omitempty" gorm:"column:dealer_code"`
+	Points     int       `json:"points" gorm:"column:points"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	CreatedBy string         `json:"created_by" gorm:"column:created_by"`
@@ -90,11 +95,12 @@ type MyHeroPoint struct {
 }
 
 type Prospect struct {
-	Id            string `json:"id" gorm:"column:id;primaryKey"`
-	DatasetId     string `json:"dataset_id" gorm:"column:dataset_id"`
-	PersonId      string `json:"person_id" gorm:"column:person_id"`
-	HondaId       string `json:"honda_id" gorm:"column:honda_id"`
-	ProspectCount int    `json:"prospect_count" gorm:"column:prospect_count"`
+	Id            string    `json:"id" gorm:"column:id;primaryKey"`
+	DatasetId     string    `json:"dataset_id" gorm:"column:dataset_id"`
+	PeriodDate    time.Time `json:"period_date" gorm:"column:period_date"`
+	PersonId      string    `json:"person_id" gorm:"column:person_id"`
+	HondaId       string    `json:"honda_id" gorm:"column:honda_id"`
+	ProspectCount int       `json:"prospect_count" gorm:"column:prospect_count"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	CreatedBy string         `json:"created_by" gorm:"column:created_by"`

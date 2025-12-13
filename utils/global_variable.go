@@ -28,6 +28,15 @@ const (
 	DatasetTotalProspect = "TOTAL_PROSPECTS"
 )
 
+// Period frequencies
+const (
+	PeriodDaily     = "DAILY"
+	PeriodWeekly    = "WEEKLY"
+	PeriodMonthly   = "MONTHLY"
+	PeriodQuarterly = "QUARTERLY"
+	PeriodYearly    = "YEARLY"
+)
+
 var AllowedRoles = map[string]bool{
 	RoleSuperAdmin: true,
 	RoleAdmin:      true,

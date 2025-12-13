@@ -48,10 +48,13 @@ func (s *ServiceDataset) Create(datasetType string, req dto.DatasetUploadRequest
 
 	periodFrequency := strings.ToUpper(strings.TrimSpace(req.PeriodFrequency))
 	if periodFrequency == "" {
-		periodFrequency = "DAILY"
+		periodFrequency = utils.PeriodDaily
 	}
 	if _, ok := utils.AllowedPeriodFrequencies[periodFrequency]; !ok {
 		return domaindataset.DashboardDataset{}, nil, errors.New("invalid period_frequency")
+	}
+	if periodFrequency == utils.PeriodWeekly && periodDate.Weekday() != time.Monday {
+		return domaindataset.DashboardDataset{}, nil, errors.New("period_date must be Monday for WEEKLY frequency")
 	}
 
 	data, err := io.ReadAll(file)
