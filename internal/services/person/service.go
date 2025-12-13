@@ -7,6 +7,7 @@ import (
 	interfaceperson "teamleader-management/internal/interfaces/person"
 	"teamleader-management/pkg/filter"
 	"teamleader-management/utils"
+	"time"
 )
 
 type ServicePerson struct {
@@ -17,7 +18,7 @@ func NewPersonService(repo interfaceperson.RepoPersonInterface) *ServicePerson {
 	return &ServicePerson{Repo: repo}
 }
 
-func (s *ServicePerson) Create(req dto.PersonCreate) (domainperson.Person, error) {
+func (s *ServicePerson) Create(req dto.PersonCreate, actorId string) (domainperson.Person, error) {
 	if err := utils.ValidateRole(req.Role); err != nil {
 		return domainperson.Person{}, err
 	}
@@ -38,6 +39,8 @@ func (s *ServicePerson) Create(req dto.PersonCreate) (domainperson.Person, error
 		Role:       req.Role,
 		DealerCode: req.DealerCode,
 		Active:     active,
+		CreatedAt:  time.Now(),
+		CreatedBy:  actorId,
 	}
 
 	if err := s.Repo.Store(entity); err != nil {
@@ -61,7 +64,7 @@ func (s *ServicePerson) GetAll(params filter.BaseParams) ([]domainperson.Person,
 	return s.Repo.GetAll(params)
 }
 
-func (s *ServicePerson) Update(id string, req dto.PersonUpdate) (domainperson.Person, error) {
+func (s *ServicePerson) Update(id string, req dto.PersonUpdate, actorId string) (domainperson.Person, error) {
 	person, err := s.Repo.GetByID(id)
 	if err != nil {
 		return domainperson.Person{}, err
@@ -96,6 +99,10 @@ func (s *ServicePerson) Update(id string, req dto.PersonUpdate) (domainperson.Pe
 	if req.Active != nil {
 		person.Active = *req.Active
 	}
+
+	now := time.Now()
+	person.UpdatedAt = now
+	person.UpdatedBy = actorId
 
 	if err := s.Repo.Update(person); err != nil {
 		return domainperson.Person{}, err

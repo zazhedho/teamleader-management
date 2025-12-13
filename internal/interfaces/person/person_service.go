@@ -7,9 +7,9 @@ import (
 )
 
 type ServicePersonInterface interface {
-	Create(req dto.PersonCreate) (domainperson.Person, error)
+	Create(req dto.PersonCreate, actorId string) (domainperson.Person, error)
 	GetByID(id string) (domainperson.Person, error)
 	GetAll(params filter.BaseParams) ([]domainperson.Person, int64, error)
-	Update(id string, req dto.PersonUpdate) (domainperson.Person, error)
+	Update(id string, req dto.PersonUpdate, actorId string) (domainperson.Person, error)
 	Delete(id string) error
 }

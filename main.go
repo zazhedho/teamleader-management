@@ -87,6 +87,8 @@ func main() {
 	routes.RoleRoutes()
 	routes.PermissionRoutes()
 	routes.MenuRoutes()
+	routes.PillarRoutes()
+	routes.KPIItemRoutes()
 	routes.PersonRoutes()
 
 	// Register session routes if Redis is available

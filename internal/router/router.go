@@ -8,22 +8,28 @@ import (
 	"gorm.io/gorm"
 
 	"teamleader-management/infrastructure/database"
+	kpiHandler "teamleader-management/internal/handlers/http/kpiitem"
 	menuHandler "teamleader-management/internal/handlers/http/menu"
 	permissionHandler "teamleader-management/internal/handlers/http/permission"
 	personHandler "teamleader-management/internal/handlers/http/person"
+	pillarHandler "teamleader-management/internal/handlers/http/pillar"
 	roleHandler "teamleader-management/internal/handlers/http/role"
 	sessionHandler "teamleader-management/internal/handlers/http/session"
 	userHandler "teamleader-management/internal/handlers/http/user"
 	authRepo "teamleader-management/internal/repositories/auth"
+	kpiRepo "teamleader-management/internal/repositories/kpiitem"
 	menuRepo "teamleader-management/internal/repositories/menu"
 	permissionRepo "teamleader-management/internal/repositories/permission"
 	personRepo "teamleader-management/internal/repositories/person"
+	pillarRepo "teamleader-management/internal/repositories/pillar"
 	roleRepo "teamleader-management/internal/repositories/role"
 	sessionRepo "teamleader-management/internal/repositories/session"
 	userRepo "teamleader-management/internal/repositories/user"
+	kpiSvc "teamleader-management/internal/services/kpiitem"
 	menuSvc "teamleader-management/internal/services/menu"
 	permissionSvc "teamleader-management/internal/services/permission"
 	personSvc "teamleader-management/internal/services/person"
+	pillarSvc "teamleader-management/internal/services/pillar"
 	roleSvc "teamleader-management/internal/services/role"
 	sessionSvc "teamleader-management/internal/services/session"
 	userSvc "teamleader-management/internal/services/user"
@@ -190,6 +196,49 @@ func (r *Routes) MenuRoutes() {
 		menu.GET("/:id", mdw.PermissionMiddleware("menus", "view"), h.GetByID)
 		menu.PUT("/:id", mdw.PermissionMiddleware("menus", "update"), h.Update)
 		menu.DELETE("/:id", mdw.PermissionMiddleware("menus", "delete"), h.Delete)
+	}
+}
+
+func (r *Routes) PillarRoutes() {
+	repo := pillarRepo.NewPillarRepo(r.DB)
+	svc := pillarSvc.NewPillarService(repo)
+	h := pillarHandler.NewPillarHandler(svc)
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	pRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
+
+	r.App.GET("/api/pillars", mdw.AuthMiddleware(), mdw.PermissionMiddleware("pillars", "list"), h.GetAll)
+
+	pillar := r.App.Group("/api/pillar").Use(mdw.AuthMiddleware())
+	{
+		pillar.POST("", mdw.PermissionMiddleware("pillars", "create"), h.Create)
+		pillar.GET("/:id", mdw.PermissionMiddleware("pillars", "view"), h.GetByID)
+		pillar.PUT("/:id", mdw.PermissionMiddleware("pillars", "update"), h.Update)
+		pillar.DELETE("/:id", mdw.PermissionMiddleware("pillars", "delete"), h.Delete)
+	}
+}
+
+func (r *Routes) KPIItemRoutes() {
+	kRepo := kpiRepo.NewKPIItemRepo(r.DB)
+	tRepo := kpiRepo.NewPersonKPITargetRepo(r.DB)
+	pRepo := pillarRepo.NewPillarRepo(r.DB)
+	prRepo := personRepo.NewPersonRepo(r.DB)
+	svc := kpiSvc.NewKPIItemService(kRepo, pRepo, prRepo, tRepo)
+	h := kpiHandler.NewKPIItemHandler(svc)
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	permRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, permRepo)
+
+	r.App.GET("/api/kpi-items", mdw.AuthMiddleware(), mdw.PermissionMiddleware("kpi_items", "list"), h.GetAll)
+
+	kpi := r.App.Group("/api/kpi-item").Use(mdw.AuthMiddleware())
+	{
+		kpi.POST("", mdw.PermissionMiddleware("kpi_items", "create"), h.Create)
+		kpi.GET("/:id", mdw.PermissionMiddleware("kpi_items", "view"), h.GetByID)
+		kpi.PUT("/:id", mdw.PermissionMiddleware("kpi_items", "update"), h.Update)
+		kpi.DELETE("/:id", mdw.PermissionMiddleware("kpi_items", "delete"), h.Delete)
+		kpi.POST("/target", mdw.PermissionMiddleware("kpi_items", "update"), h.UpsertPersonTarget)
+		kpi.DELETE("/target", mdw.PermissionMiddleware("kpi_items", "delete"), h.DeletePersonTarget)
 	}
 }
 
