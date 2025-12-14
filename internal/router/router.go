@@ -329,20 +329,20 @@ func (r *Routes) TLRoutes() {
 	mediaRepository := mediaRepo.NewMediaRepo(r.DB)
 	activityRepo := tlActivityRepo.NewTLActivityRepo(r.DB)
 	attendanceRepo := tlAttendanceRepo.NewTLAttendanceRepo(r.DB)
-	sessionRepo := tlSessionRepo.NewTLSessionRepo(r.DB)
+	tlsessionRepo := tlSessionRepo.NewTLSessionRepo(r.DB)
 	trainingRepo := tlTrainingRepo.NewTLTrainingRepo(r.DB)
 
 	// Initialize services
 	mediaService := mediaSvc.NewMediaService(mediaRepository)
 	activityService := tlActivitySvc.NewTLActivityService(activityRepo, mediaService)
 	attendanceService := tlAttendanceSvc.NewTLAttendanceService(attendanceRepo)
-	sessionService := tlSessionSvc.NewTLSessionService(sessionRepo, mediaService)
+	sessionService := tlSessionSvc.NewTLSessionService(tlsessionRepo, mediaService)
 	trainingService := tlTrainingSvc.NewTLTrainingService(trainingRepo)
 
 	// Initialize handlers
 	activityHandler := tlHandler.NewTLActivityHandler(activityService)
 	attendanceHandler := tlHandler.NewTLAttendanceHandler(attendanceService)
-	sessionHandler := tlHandler.NewTLSessionHandler(sessionService)
+	tlsessionHandler := tlHandler.NewTLSessionHandler(sessionService)
 	trainingHandler := tlHandler.NewTLTrainingHandler(trainingService)
 
 	// Initialize middleware
@@ -351,40 +351,40 @@ func (r *Routes) TLRoutes() {
 	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
 
 	// TL Daily Activity Routes
+	r.App.GET("/api/tl/activities", mdw.AuthMiddleware(), mdw.PermissionMiddleware("tl_activities", "list"), activityHandler.GetAll)
 	activity := r.App.Group("/api/tl/activity").Use(mdw.AuthMiddleware())
 	{
 		activity.POST("", mdw.PermissionMiddleware("tl_activities", "create"), activityHandler.Create)
-		activity.GET("", mdw.PermissionMiddleware("tl_activities", "list"), activityHandler.GetAll)
 		activity.GET("/:id", mdw.PermissionMiddleware("tl_activities", "view"), activityHandler.GetByID)
 		activity.PUT("/:id", mdw.PermissionMiddleware("tl_activities", "update"), activityHandler.Update)
 		activity.DELETE("/:id", mdw.PermissionMiddleware("tl_activities", "delete"), activityHandler.Delete)
 	}
 
 	// TL Attendance Routes
+	r.App.GET("/api/tl/attendances", mdw.AuthMiddleware(), mdw.PermissionMiddleware("tl_attendance", "list"), attendanceHandler.GetAll)
 	attendance := r.App.Group("/api/tl/attendance").Use(mdw.AuthMiddleware())
 	{
 		attendance.POST("", mdw.PermissionMiddleware("tl_attendance", "create"), attendanceHandler.Create)
-		attendance.GET("", mdw.PermissionMiddleware("tl_attendance", "list"), attendanceHandler.GetAll)
 		attendance.GET("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "view"), attendanceHandler.GetByRecordUniqueId)
 		attendance.PUT("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "update"), attendanceHandler.Update)
 		attendance.DELETE("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "delete"), attendanceHandler.Delete)
 	}
 
 	// TL Session Routes (Merged Coaching & Briefing)
+	r.App.GET("/api/tl/sessions", mdw.AuthMiddleware(), mdw.PermissionMiddleware("tl_sessions", "list"), tlsessionHandler.GetAll)
 	session := r.App.Group("/api/tl/session").Use(mdw.AuthMiddleware())
 	{
-		session.POST("", mdw.PermissionMiddleware("tl_sessions", "create"), sessionHandler.Create)
-		session.GET("", mdw.PermissionMiddleware("tl_sessions", "list"), sessionHandler.GetAll)
-		session.GET("/:id", mdw.PermissionMiddleware("tl_sessions", "view"), sessionHandler.GetByID)
-		session.PUT("/:id", mdw.PermissionMiddleware("tl_sessions", "update"), sessionHandler.Update)
-		session.DELETE("/:id", mdw.PermissionMiddleware("tl_sessions", "delete"), sessionHandler.Delete)
+		session.POST("", mdw.PermissionMiddleware("tl_sessions", "create"), tlsessionHandler.Create)
+		session.GET("/:id", mdw.PermissionMiddleware("tl_sessions", "view"), tlsessionHandler.GetByID)
+		session.PUT("/:id", mdw.PermissionMiddleware("tl_sessions", "update"), tlsessionHandler.Update)
+		session.DELETE("/:id", mdw.PermissionMiddleware("tl_sessions", "delete"), tlsessionHandler.Delete)
 	}
 
 	// TL Training Participation Routes
+	r.App.GET("/api/tl/trainings", mdw.AuthMiddleware(), mdw.PermissionMiddleware("tl_training", "list"), trainingHandler.GetAll)
 	training := r.App.Group("/api/tl/training").Use(mdw.AuthMiddleware())
 	{
 		training.POST("", mdw.PermissionMiddleware("tl_training", "create"), trainingHandler.Create)
-		training.GET("", mdw.PermissionMiddleware("tl_training", "list"), trainingHandler.GetAll)
 		training.GET("/:training_batch", mdw.PermissionMiddleware("tl_training", "view"), trainingHandler.GetByTrainingBatch)
 	}
 
