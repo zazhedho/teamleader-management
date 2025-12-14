@@ -155,7 +155,7 @@ func (s *ServiceTLActivity) Delete(ctx context.Context, id string, personId stri
 	}
 
 	// Delete associated media (including from storage)
-	if err := s.MediaService.DeleteMediaByEntity(ctx, "tl_activity", id); err != nil {
+	if err := s.MediaService.DeleteMediaByEntity(ctx, utils.EntityTLActivity, id); err != nil {
 		// Log error but continue with deletion
 	}
 

@@ -17,7 +17,7 @@ import (
 	pillarHandler "teamleader-management/internal/handlers/http/pillar"
 	roleHandler "teamleader-management/internal/handlers/http/role"
 	sessionHandler "teamleader-management/internal/handlers/http/session"
-	tlHandler "teamleader-management/internal/handlers/http/tl"
+	tlHandler "teamleader-management/internal/handlers/http/teamleader"
 	userHandler "teamleader-management/internal/handlers/http/user"
 	authRepo "teamleader-management/internal/repositories/auth"
 	datasetRepo "teamleader-management/internal/repositories/dataset"

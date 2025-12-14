@@ -3,14 +3,16 @@ package servicetlsession
 import (
 	"context"
 	"errors"
+	"teamleader-management/utils"
 	"time"
 
-	"github.com/lib/pq"
 	domaintlsession "teamleader-management/internal/domain/tlsession"
 	"teamleader-management/internal/dto"
 	interfacemedia "teamleader-management/internal/interfaces/media"
 	interfacetlsession "teamleader-management/internal/interfaces/tlsession"
 	"teamleader-management/pkg/filter"
+
+	"github.com/lib/pq"
 
 	"github.com/google/uuid"
 )
@@ -127,7 +129,7 @@ func (s *ServiceTLSession) Delete(ctx context.Context, id string, personId strin
 	}
 
 	// Delete associated media (including from storage)
-	if err := s.MediaService.DeleteMediaByEntity(ctx, "tl_session", id); err != nil {
+	if err := s.MediaService.DeleteMediaByEntity(ctx, utils.EntityTLSession, id); err != nil {
 		// Log error but continue with deletion
 	}
 

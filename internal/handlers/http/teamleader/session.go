@@ -1,4 +1,4 @@
-package handlertl
+package handlerteamleader
 
 import (
 	"fmt"
@@ -257,7 +257,7 @@ func (h *TLSessionHandler) UploadFile(ctx *gin.Context) {
 	}
 
 	// Check existing media count (max 2)
-	existingMedia, _ := h.MediaService.GetMediaByEntity("tl_session", id)
+	existingMedia, _ := h.MediaService.GetMediaByEntity(utils.EntityTLSession, id)
 	if len(existingMedia) >= 2 {
 		res := response.Response(http.StatusBadRequest, "Maximum 2 photos allowed per session", logId, nil)
 		ctx.JSON(http.StatusBadRequest, res)
@@ -273,7 +273,7 @@ func (h *TLSessionHandler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), "tl_session", id, file, actor)
+	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), utils.EntityTLSession, id, file, actor)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.UploadAndAttach; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -316,7 +316,7 @@ func (h *TLSessionHandler) GetFiles(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.GetMediaByEntity("tl_session", id)
+	data, err := h.MediaService.GetMediaByEntity(utils.EntityTLSession, id)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.GetMediaByEntity; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -368,7 +368,7 @@ func (h *TLSessionHandler) DeleteFile(ctx *gin.Context) {
 		return
 	}
 
-	if media.EntityType != "tl_session" || media.EntityId != id {
+	if media.EntityType != utils.EntityTLSession || media.EntityId != id {
 		res := response.Response(http.StatusForbidden, "File does not belong to this session", logId, nil)
 		ctx.JSON(http.StatusForbidden, res)
 		return

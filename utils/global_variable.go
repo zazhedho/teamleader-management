@@ -44,3 +44,8 @@ var AllowedRoles = map[string]bool{
 	RoleViewer:     true,
 	RoleSM:         true,
 }
+
+const (
+	EntityTLActivity = "tl_activity"
+	EntityTLSession  = "tl_session"
+)

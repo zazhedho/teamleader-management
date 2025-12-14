@@ -1,4 +1,4 @@
-package handlertl
+package handlerteamleader
 
 import (
 	"fmt"
@@ -255,7 +255,7 @@ func (h *TLActivityHandler) UploadFile(ctx *gin.Context) {
 	}
 
 	// Check existing media count (max 2)
-	existingMedia, _ := h.MediaService.GetMediaByEntity("tl_activity", id)
+	existingMedia, _ := h.MediaService.GetMediaByEntity(utils.EntityTLActivity, id)
 	if len(existingMedia) >= 2 {
 		res := response.Response(http.StatusBadRequest, "Maximum 2 photos allowed per activity", logId, nil)
 		ctx.JSON(http.StatusBadRequest, res)
@@ -271,7 +271,7 @@ func (h *TLActivityHandler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), "tl_activity", id, file, actor)
+	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), utils.EntityTLActivity, id, file, actor)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.UploadAndAttach; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -314,7 +314,7 @@ func (h *TLActivityHandler) GetFiles(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.GetMediaByEntity("tl_activity", id)
+	data, err := h.MediaService.GetMediaByEntity(utils.EntityTLActivity, id)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.GetMediaByEntity; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -366,7 +366,7 @@ func (h *TLActivityHandler) DeleteFile(ctx *gin.Context) {
 		return
 	}
 
-	if media.EntityType != "tl_activity" || media.EntityId != id {
+	if media.EntityType != utils.EntityTLActivity || media.EntityId != id {
 		res := response.Response(http.StatusForbidden, "File does not belong to this activity", logId, nil)
 		ctx.JSON(http.StatusForbidden, res)
 		return
