@@ -145,6 +145,8 @@ func (p *Processor) processQuiz(ds *domaindataset.DashboardDataset, data []byte,
 			PassStatus: passStatus,
 			CreatedAt:  now,
 			CreatedBy:  actorId,
+			UpdatedAt:  now,
+			UpdatedBy:  actorId,
 		}
 		results = append(results, result)
 	}
@@ -210,6 +212,8 @@ func (p *Processor) processAppleLogin(ds *domaindataset.DashboardDataset, data [
 			EveningDone: eveningDone,
 			CreatedAt:   now,
 			CreatedBy:   actorId,
+			UpdatedAt:   now,
+			UpdatedBy:   actorId,
 		}
 		logins = append(logins, login)
 	}
@@ -270,6 +274,8 @@ func (p *Processor) processSalesFLP(ds *domaindataset.DashboardDataset, data []b
 			Amount:     amount,
 			CreatedAt:  now,
 			CreatedBy:  actorId,
+			UpdatedAt:  now,
+			UpdatedBy:  actorId,
 		}
 		entries = append(entries, entry)
 	}
@@ -332,6 +338,8 @@ func (p *Processor) processMyHeroPoints(ds *domaindataset.DashboardDataset, data
 			Points:     points,
 			CreatedAt:  now,
 			CreatedBy:  actorId,
+			UpdatedAt:  now,
+			UpdatedBy:  actorId,
 		}
 		entries = append(entries, entry)
 	}
@@ -387,6 +395,8 @@ func (p *Processor) processProspects(ds *domaindataset.DashboardDataset, data []
 			ProspectCount: prospectCount,
 			CreatedAt:     now,
 			CreatedBy:     actorId,
+			UpdatedAt:     now,
+			UpdatedBy:     actorId,
 		}
 		entries = append(entries, entry)
 	}
@@ -443,6 +453,8 @@ func (p *Processor) processApplePoints(ds *domaindataset.DashboardDataset, data 
 			Points:     points,
 			CreatedAt:  now,
 			CreatedBy:  actorId,
+			UpdatedAt:  now,
+			UpdatedBy:  actorId,
 		}
 		entries = append(entries, entry)
 	}
