@@ -3,6 +3,7 @@ package handlerdataset
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -42,7 +43,12 @@ func (h *DatasetHandler) Upload(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+		if f, ok := file.(*os.File); ok {
+			_ = os.Remove(f.Name())
+		}
+	}()
 
 	authData := utils.GetAuthData(ctx)
 	actor := ""
