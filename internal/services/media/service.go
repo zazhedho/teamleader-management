@@ -63,8 +63,7 @@ func (s *ServiceMedia) UploadAndAttach(ctx context.Context, entityType string, e
 	}
 	defer src.Close()
 
-	// Determine folder based on entity type
-	folder := fmt.Sprintf("%s/%s", entityType, entityId)
+	folder := utils.UnderscoreToDash(entityType)
 
 	// Upload to storage
 	fileUrl, err := s.Storage.UploadFile(ctx, src, file, folder)

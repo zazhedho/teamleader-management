@@ -128,8 +128,11 @@ func (s *ServiceTLSession) Delete(ctx context.Context, id string, personId strin
 		return errors.New("unauthorized access to this session")
 	}
 
+	// Get dynamic entity_type based on session_type
+	entityType := utils.GetSessionEntityType(session.SessionType)
+
 	// Delete associated media (including from storage)
-	if err := s.MediaService.DeleteMediaByEntity(ctx, utils.EntityTLSession, id); err != nil {
+	if err := s.MediaService.DeleteMediaByEntity(ctx, entityType, id); err != nil {
 		// Log error but continue with deletion
 	}
 

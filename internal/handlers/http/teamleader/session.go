@@ -246,8 +246,8 @@ func (h *TLSessionHandler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	// Verify session ownership
-	_, err := h.Service.GetByID(id, personId)
+	// Verify session ownership and get session data
+	session, err := h.Service.GetByID(id, personId)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Session not found or unauthorized: %+v", logPrefix, err))
 		res := response.Response(http.StatusNotFound, "Session not found", logId, nil)
@@ -256,8 +256,11 @@ func (h *TLSessionHandler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
+	// Get dynamic entity_type based on session_type
+	entityType := utils.GetSessionEntityType(session.SessionType)
+
 	// Check existing media count (max 2)
-	existingMedia, _ := h.MediaService.GetMediaByEntity(utils.EntityTLSession, id)
+	existingMedia, _ := h.MediaService.GetMediaByEntity(entityType, id)
 	if len(existingMedia) >= 2 {
 		res := response.Response(http.StatusBadRequest, "Maximum 2 photos allowed per session", logId, nil)
 		ctx.JSON(http.StatusBadRequest, res)
@@ -273,7 +276,7 @@ func (h *TLSessionHandler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), utils.EntityTLSession, id, file, actor)
+	data, err := h.MediaService.UploadAndAttach(ctx.Request.Context(), entityType, id, file, actor)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.UploadAndAttach; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -306,8 +309,8 @@ func (h *TLSessionHandler) GetFiles(ctx *gin.Context) {
 		return
 	}
 
-	// Verify session ownership
-	_, err := h.Service.GetByID(id, personId)
+	// Verify session ownership and get session data
+	session, err := h.Service.GetByID(id, personId)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Session not found or unauthorized: %+v", logPrefix, err))
 		res := response.Response(http.StatusNotFound, "Session not found", logId, nil)
@@ -316,7 +319,10 @@ func (h *TLSessionHandler) GetFiles(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.MediaService.GetMediaByEntity(utils.EntityTLSession, id)
+	// Get dynamic entity_type based on session_type
+	entityType := utils.GetSessionEntityType(session.SessionType)
+
+	data, err := h.MediaService.GetMediaByEntity(entityType, id)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; MediaService.GetMediaByEntity; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -349,8 +355,8 @@ func (h *TLSessionHandler) DeleteFile(ctx *gin.Context) {
 		return
 	}
 
-	// Verify session ownership
-	_, err := h.Service.GetByID(id, personId)
+	// Verify session ownership and get session data
+	session, err := h.Service.GetByID(id, personId)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Session not found or unauthorized: %+v", logPrefix, err))
 		res := response.Response(http.StatusNotFound, "Session not found", logId, nil)
@@ -358,6 +364,9 @@ func (h *TLSessionHandler) DeleteFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, res)
 		return
 	}
+
+	// Get dynamic entity_type based on session_type
+	entityType := utils.GetSessionEntityType(session.SessionType)
 
 	// Verify file belongs to this session
 	media, err := h.MediaService.GetMediaByID(fileId)
@@ -368,7 +377,7 @@ func (h *TLSessionHandler) DeleteFile(ctx *gin.Context) {
 		return
 	}
 
-	if media.EntityType != utils.EntityTLSession || media.EntityId != id {
+	if media.EntityType != entityType || media.EntityId != id {
 		res := response.Response(http.StatusForbidden, "File does not belong to this session", logId, nil)
 		ctx.JSON(http.StatusForbidden, res)
 		return

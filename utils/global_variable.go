@@ -47,5 +47,11 @@ var AllowedRoles = map[string]bool{
 
 const (
 	EntityTLActivity = "tl_activity"
-	EntityTLSession  = "tl_session"
+	EntityTLCoaching = "tl_coaching"
+	EntityTLBriefing = "tl_briefing"
+)
+
+const (
+	SessionTypeCoaching = "coaching"
+	SessionTypeBriefing = "briefing"
 )
