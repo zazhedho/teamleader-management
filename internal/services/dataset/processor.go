@@ -63,6 +63,8 @@ func (p *Processor) ProcessStream(ds *domaindataset.DashboardDataset, data []byt
 		processErr = p.processApplePoints(ds, data, actorId)
 	case utils.DatasetPointMyHero:
 		processErr = p.processMyHeroPoints(ds, data, actorId)
+	case utils.DatasetTotalProspect:
+		processErr = p.processProspects(ds, data, actorId)
 	default:
 		processErr = fmt.Errorf("dataset type %s not supported yet", ds.Type)
 	}
@@ -335,6 +337,61 @@ func (p *Processor) processMyHeroPoints(ds *domaindataset.DashboardDataset, data
 	}
 
 	if err := p.MetricRepo.SaveMyHeroPoints(entries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Processor) processProspects(ds *domaindataset.DashboardDataset, data []byte, actorId string) error {
+	rows, err := file.ReadExcelRows(data, 0, 2)
+	if err != nil {
+		return err
+	}
+
+	entries := make([]domainmetric.Prospect, 0, len(rows)-1)
+	now := time.Now()
+
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 4 { // No, Honda ID, Nama Sales, Prospek
+			return fmt.Errorf("row %d has insufficient columns", i+1)
+		}
+
+		hondaId := strings.TrimSpace(row[1])
+		if hondaId == "" {
+			return fmt.Errorf("row %d missing Honda ID", i+1)
+		}
+		person, err := p.PersonRepo.GetByHondaID(hondaId)
+		if err != nil {
+			return fmt.Errorf("row %d person not found for honda_id %s", i+1, hondaId)
+		}
+
+		prospectStr := strings.TrimSpace(row[3])
+		if prospectStr == "" {
+			return fmt.Errorf("row %d prospek is required", i+1)
+		}
+		prospectCount, err := utils.ParseInt(prospectStr)
+		if err != nil {
+			return fmt.Errorf("row %d invalid Prospek value: %v", i+1, err)
+		}
+
+		entry := domainmetric.Prospect{
+			Id:            utils.CreateUUID(),
+			DatasetId:     ds.Id,
+			PeriodDate:    ds.PeriodDate,
+			PersonId:      person.Id,
+			HondaId:       hondaId,
+			ProspectCount: prospectCount,
+			CreatedAt:     now,
+			CreatedBy:     actorId,
+		}
+		entries = append(entries, entry)
+	}
+
+	if err := p.MetricRepo.SaveProspects(entries); err != nil {
 		return err
 	}
 
