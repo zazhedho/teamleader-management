@@ -15,7 +15,6 @@ type TLActivityCreate struct {
 	DealCount        int       `json:"deal_count" binding:"min=0"`
 	MotorkuDownloads int       `json:"motorku_downloads" binding:"min=0"`
 	Notes            *string   `json:"notes" binding:"omitempty,max=500"`
-	PhotoUrls        []string  `json:"photo_urls" binding:"omitempty,max=2,dive,url"` // Max 2 photos
 }
 
 type TLActivityUpdate struct {
@@ -30,7 +29,6 @@ type TLActivityUpdate struct {
 	DealCount        *int       `json:"deal_count" binding:"omitempty,min=0"`
 	MotorkuDownloads *int       `json:"motorku_downloads" binding:"omitempty,min=0"`
 	Notes            *string    `json:"notes" binding:"omitempty,max=500"`
-	PhotoUrls        []string   `json:"photo_urls" binding:"omitempty,max=2,dive,url"` // Max 2 photos
 }
 
 // TL Attendance DTOs
@@ -57,7 +55,6 @@ type TLSessionCreate struct {
 	Notes         *string   `json:"notes" binding:"omitempty,max=1000"`
 	Attendees     []string  `json:"attendees" binding:"omitempty"`
 	DurationHours *float64  `json:"duration_hours" binding:"omitempty,min=0,max=24"`
-	PhotoUrls     []string  `json:"photo_urls" binding:"omitempty,max=2,dive,url"` // Max 2 photos
 }
 
 type TLSessionUpdate struct {
@@ -66,7 +63,6 @@ type TLSessionUpdate struct {
 	Notes         *string    `json:"notes" binding:"omitempty,max=1000"`
 	Attendees     []string   `json:"attendees" binding:"omitempty"`
 	DurationHours *float64   `json:"duration_hours" binding:"omitempty,min=0,max=24"`
-	PhotoUrls     []string   `json:"photo_urls" binding:"omitempty,max=2,dive,url"` // Max 2 photos
 }
 
 // TL Training Participation DTOs

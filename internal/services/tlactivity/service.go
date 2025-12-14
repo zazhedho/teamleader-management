@@ -1,6 +1,7 @@
 package servicetlactivity
 
 import (
+	"context"
 	"errors"
 	"teamleader-management/utils"
 	"time"
@@ -49,17 +50,6 @@ func (s *ServiceTLActivity) Create(personId string, req dto.TLActivityCreate, ac
 
 	if err := s.Repo.Store(entity); err != nil {
 		return domaintlactivity.TLDailyActivity{}, err
-	}
-
-	// Attach media if provided
-	if len(req.PhotoUrls) > 0 {
-		fileNames := make([]string, len(req.PhotoUrls))
-		for i := range req.PhotoUrls {
-			fileNames[i] = "photo"
-		}
-		if _, err := s.MediaService.AttachMedia("tl_activity", activityId, req.PhotoUrls, fileNames, actorId); err != nil {
-			// Log error but don't fail the creation
-		}
 	}
 
 	created, err := s.Repo.GetByID(activityId)
@@ -147,17 +137,6 @@ func (s *ServiceTLActivity) Update(id string, personId string, req dto.TLActivit
 	activity.UpdatedAt = time.Now()
 	activity.UpdatedBy = actorId
 
-	// Update media if provided
-	if req.PhotoUrls != nil {
-		fileNames := make([]string, len(req.PhotoUrls))
-		for i := range req.PhotoUrls {
-			fileNames[i] = "photo"
-		}
-		if _, err := s.MediaService.ReplaceMedia("tl_activity", id, req.PhotoUrls, fileNames, actorId); err != nil {
-			// Log error but don't fail the update
-		}
-	}
-
 	if err := s.Repo.Update(activity); err != nil {
 		return domaintlactivity.TLDailyActivity{}, err
 	}
@@ -165,7 +144,7 @@ func (s *ServiceTLActivity) Update(id string, personId string, req dto.TLActivit
 	return activity, nil
 }
 
-func (s *ServiceTLActivity) Delete(id string, personId string) error {
+func (s *ServiceTLActivity) Delete(ctx context.Context, id string, personId string) error {
 	activity, err := s.Repo.GetByID(id)
 	if err != nil {
 		return err
@@ -175,8 +154,8 @@ func (s *ServiceTLActivity) Delete(id string, personId string) error {
 		return errors.New("unauthorized access to this activity")
 	}
 
-	// Delete associated media
-	if err := s.MediaService.DeleteMediaByEntity("tl_activity", id); err != nil {
+	// Delete associated media (including from storage)
+	if err := s.MediaService.DeleteMediaByEntity(ctx, "tl_activity", id); err != nil {
 		// Log error but continue with deletion
 	}
 

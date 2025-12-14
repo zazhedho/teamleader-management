@@ -1,6 +1,7 @@
 package servicetlsession
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -45,18 +46,6 @@ func (s *ServiceTLSession) Create(personId string, req dto.TLSessionCreate, acto
 
 	if err := s.Repo.Store(entity); err != nil {
 		return domaintlsession.TLSession{}, err
-	}
-
-	// Attach media if provided
-	if len(req.PhotoUrls) > 0 {
-		fileNames := make([]string, len(req.PhotoUrls))
-		for i := range req.PhotoUrls {
-			fileNames[i] = "photo"
-		}
-		if _, err := s.MediaService.AttachMedia("tl_session", sessionId, req.PhotoUrls, fileNames, actorId); err != nil {
-			// Log error but don't fail the creation
-			// Consider adding proper logging here
-		}
 	}
 
 	created, err := s.Repo.GetByID(sessionId)
@@ -120,17 +109,6 @@ func (s *ServiceTLSession) Update(id string, personId string, req dto.TLSessionU
 	session.UpdatedAt = time.Now()
 	session.UpdatedBy = actorId
 
-	// Update media if provided
-	if req.PhotoUrls != nil {
-		fileNames := make([]string, len(req.PhotoUrls))
-		for i := range req.PhotoUrls {
-			fileNames[i] = "photo"
-		}
-		if _, err := s.MediaService.ReplaceMedia("tl_session", id, req.PhotoUrls, fileNames, actorId); err != nil {
-			// Log error but don't fail the update
-		}
-	}
-
 	if err := s.Repo.Update(session); err != nil {
 		return domaintlsession.TLSession{}, err
 	}
@@ -138,7 +116,7 @@ func (s *ServiceTLSession) Update(id string, personId string, req dto.TLSessionU
 	return session, nil
 }
 
-func (s *ServiceTLSession) Delete(id string, personId string) error {
+func (s *ServiceTLSession) Delete(ctx context.Context, id string, personId string) error {
 	session, err := s.Repo.GetByID(id)
 	if err != nil {
 		return err
@@ -148,8 +126,8 @@ func (s *ServiceTLSession) Delete(id string, personId string) error {
 		return errors.New("unauthorized access to this session")
 	}
 
-	// Delete associated media
-	if err := s.MediaService.DeleteMediaByEntity("tl_session", id); err != nil {
+	// Delete associated media (including from storage)
+	if err := s.MediaService.DeleteMediaByEntity(ctx, "tl_session", id); err != nil {
 		// Log error but continue with deletion
 	}
 

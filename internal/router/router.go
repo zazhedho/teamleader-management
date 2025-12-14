@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"teamleader-management/infrastructure/database"
+	"teamleader-management/infrastructure/media"
 	datasetHandler "teamleader-management/internal/handlers/http/dataset"
 	kpiHandler "teamleader-management/internal/handlers/http/kpiitem"
 	menuHandler "teamleader-management/internal/handlers/http/menu"
@@ -325,6 +326,12 @@ func (r *Routes) SessionRoutes() {
 }
 
 func (r *Routes) TLRoutes() {
+	// Initialize storage provider for file uploads
+	storageProvider, err := media.InitStorage()
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, "Failed to initialize storage provider: "+err.Error())
+	}
+
 	// Initialize repositories
 	mediaRepository := mediaRepo.NewMediaRepo(r.DB)
 	activityRepo := tlActivityRepo.NewTLActivityRepo(r.DB)
@@ -332,17 +339,17 @@ func (r *Routes) TLRoutes() {
 	tlsessionRepo := tlSessionRepo.NewTLSessionRepo(r.DB)
 	trainingRepo := tlTrainingRepo.NewTLTrainingRepo(r.DB)
 
-	// Initialize services
-	mediaService := mediaSvc.NewMediaService(mediaRepository)
+	// Initialize services (with storage provider for file uploads)
+	mediaService := mediaSvc.NewMediaService(mediaRepository, storageProvider)
 	activityService := tlActivitySvc.NewTLActivityService(activityRepo, mediaService)
 	attendanceService := tlAttendanceSvc.NewTLAttendanceService(attendanceRepo)
 	sessionService := tlSessionSvc.NewTLSessionService(tlsessionRepo, mediaService)
 	trainingService := tlTrainingSvc.NewTLTrainingService(trainingRepo)
 
 	// Initialize handlers
-	activityHandler := tlHandler.NewTLActivityHandler(activityService)
+	activityHandler := tlHandler.NewTLActivityHandler(activityService, mediaService)
 	attendanceHandler := tlHandler.NewTLAttendanceHandler(attendanceService)
-	tlsessionHandler := tlHandler.NewTLSessionHandler(sessionService)
+	tlsessionHandler := tlHandler.NewTLSessionHandler(sessionService, mediaService)
 	trainingHandler := tlHandler.NewTLTrainingHandler(trainingService)
 
 	// Initialize middleware
@@ -358,6 +365,10 @@ func (r *Routes) TLRoutes() {
 		activity.GET("/:id", mdw.PermissionMiddleware("tl_activities", "view"), activityHandler.GetByID)
 		activity.PUT("/:id", mdw.PermissionMiddleware("tl_activities", "update"), activityHandler.Update)
 		activity.DELETE("/:id", mdw.PermissionMiddleware("tl_activities", "delete"), activityHandler.Delete)
+		// File upload/delete routes
+		activity.POST("/:id/file", mdw.PermissionMiddleware("tl_activities", "update"), activityHandler.UploadFile)
+		activity.GET("/:id/files", mdw.PermissionMiddleware("tl_activities", "view"), activityHandler.GetFiles)
+		activity.DELETE("/:id/file/:fileId", mdw.PermissionMiddleware("tl_activities", "update"), activityHandler.DeleteFile)
 	}
 
 	// TL Attendance Routes
@@ -378,6 +389,10 @@ func (r *Routes) TLRoutes() {
 		session.GET("/:id", mdw.PermissionMiddleware("tl_sessions", "view"), tlsessionHandler.GetByID)
 		session.PUT("/:id", mdw.PermissionMiddleware("tl_sessions", "update"), tlsessionHandler.Update)
 		session.DELETE("/:id", mdw.PermissionMiddleware("tl_sessions", "delete"), tlsessionHandler.Delete)
+		// File upload/delete routes
+		session.POST("/:id/file", mdw.PermissionMiddleware("tl_sessions", "update"), tlsessionHandler.UploadFile)
+		session.GET("/:id/files", mdw.PermissionMiddleware("tl_sessions", "view"), tlsessionHandler.GetFiles)
+		session.DELETE("/:id/file/:fileId", mdw.PermissionMiddleware("tl_sessions", "update"), tlsessionHandler.DeleteFile)
 	}
 
 	// TL Training Participation Routes

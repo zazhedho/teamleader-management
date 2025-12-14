@@ -1,6 +1,12 @@
 package servicemedia
 
 import (
+	"context"
+	"fmt"
+	"mime/multipart"
+	"path/filepath"
+	"strings"
+	"teamleader-management/pkg/storage"
 	"teamleader-management/utils"
 	"time"
 
@@ -9,65 +15,112 @@ import (
 )
 
 type ServiceMedia struct {
-	Repo interfacemedia.RepoMediaInterface
+	Repo    interfacemedia.RepoMediaInterface
+	Storage storage.StorageProvider
 }
 
-func NewMediaService(repo interfacemedia.RepoMediaInterface) *ServiceMedia {
-	return &ServiceMedia{Repo: repo}
-}
-
-func (s *ServiceMedia) AttachMedia(entityType string, entityId string, fileUrls []string, fileNames []string, actorId string) ([]domainmedia.Media, error) {
-	if len(fileUrls) == 0 {
-		return []domainmedia.Media{}, nil
+func NewMediaService(repo interfacemedia.RepoMediaInterface, storageProvider storage.StorageProvider) *ServiceMedia {
+	return &ServiceMedia{
+		Repo:    repo,
+		Storage: storageProvider,
 	}
-
-	// Ensure fileNames has the same length as fileUrls
-	if len(fileNames) < len(fileUrls) {
-		for i := len(fileNames); i < len(fileUrls); i++ {
-			fileNames = append(fileNames, "file")
-		}
-	}
-
-	now := time.Now()
-	var mediaRecords []domainmedia.Media
-
-	for i, fileUrl := range fileUrls {
-		media := domainmedia.Media{
-			Id:           utils.CreateUUID(),
-			EntityType:   entityType,
-			EntityId:     entityId,
-			FileUrl:      fileUrl,
-			FileName:     fileNames[i],
-			DisplayOrder: i + 1,
-			CreatedAt:    now,
-			CreatedBy:    actorId,
-		}
-		mediaRecords = append(mediaRecords, media)
-	}
-
-	if err := s.Repo.StoreMultiple(mediaRecords); err != nil {
-		return nil, err
-	}
-
-	return mediaRecords, nil
 }
 
 func (s *ServiceMedia) GetMediaByEntity(entityType string, entityId string) ([]domainmedia.Media, error) {
 	return s.Repo.GetByEntity(entityType, entityId)
 }
 
-func (s *ServiceMedia) DeleteMediaByEntity(entityType string, entityId string) error {
+func (s *ServiceMedia) DeleteMediaByEntity(ctx context.Context, entityType string, entityId string) error {
+	// Get all media for this entity first
+	mediaList, err := s.Repo.GetByEntity(entityType, entityId)
+	if err != nil {
+		return fmt.Errorf("failed to get media list: %w", err)
+	}
+
+	// Delete files from storage
+	if s.Storage != nil {
+		for _, media := range mediaList {
+			if media.FileUrl != "" {
+				if err := s.Storage.DeleteFile(ctx, media.FileUrl); err != nil {
+					fmt.Printf("warning: failed to delete file from storage: %v\n", err)
+				}
+			}
+		}
+	}
+
 	return s.Repo.DeleteByEntity(entityType, entityId)
 }
 
-func (s *ServiceMedia) ReplaceMedia(entityType string, entityId string, fileUrls []string, fileNames []string, actorId string) ([]domainmedia.Media, error) {
-	// Delete existing media
-	if err := s.DeleteMediaByEntity(entityType, entityId); err != nil {
-		return nil, err
+func (s *ServiceMedia) UploadAndAttach(ctx context.Context, entityType string, entityId string, file *multipart.FileHeader, actorId string) (domainmedia.Media, error) {
+	if s.Storage == nil {
+		return domainmedia.Media{}, fmt.Errorf("storage provider not configured")
 	}
 
-	// Attach new media
-	return s.AttachMedia(entityType, entityId, fileUrls, fileNames, actorId)
+	// Open the file
+	src, err := file.Open()
+	if err != nil {
+		return domainmedia.Media{}, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer src.Close()
+
+	// Determine folder based on entity type
+	folder := fmt.Sprintf("%s/%s", entityType, entityId)
+
+	// Upload to storage
+	fileUrl, err := s.Storage.UploadFile(ctx, src, file, folder)
+	if err != nil {
+		return domainmedia.Media{}, fmt.Errorf("failed to upload file: %w", err)
+	}
+
+	// Get existing media count for display order
+	existingMedia, _ := s.Repo.GetByEntity(entityType, entityId)
+	displayOrder := len(existingMedia) + 1
+
+	// Determine file type from content type
+	contentType := file.Header.Get("Content-Type")
+	fileName := strings.TrimSuffix(filepath.Base(file.Filename), filepath.Ext(file.Filename))
+
+	media := domainmedia.Media{
+		Id:           utils.CreateUUID(),
+		EntityType:   entityType,
+		EntityId:     entityId,
+		FileUrl:      fileUrl,
+		FileName:     fileName,
+		FileType:     &contentType,
+		FileSize:     &file.Size,
+		DisplayOrder: displayOrder,
+		CreatedAt:    time.Now(),
+		CreatedBy:    actorId,
+	}
+
+	if err := s.Repo.Store(media); err != nil {
+		// Try to delete uploaded file if db save fails
+		_ = s.Storage.DeleteFile(ctx, fileUrl)
+		return domainmedia.Media{}, fmt.Errorf("failed to save media record: %w", err)
+	}
+
+	return media, nil
+}
+
+func (s *ServiceMedia) GetMediaByID(mediaId string) (domainmedia.Media, error) {
+	return s.Repo.GetByID(mediaId)
+}
+
+func (s *ServiceMedia) DeleteMediaByID(ctx context.Context, mediaId string) error {
+	media, err := s.Repo.GetByID(mediaId)
+	if err != nil {
+		return fmt.Errorf("media not found: %w", err)
+	}
+
+	// Delete from storage if storage provider is configured
+	if s.Storage != nil && media.FileUrl != "" {
+		if err := s.Storage.DeleteFile(ctx, media.FileUrl); err != nil {
+			// Log error but continue with DB deletion
+			fmt.Printf("warning: failed to delete file from storage: %v\n", err)
+		}
+	}
+
+	return s.Repo.DeleteByID(mediaId)
 }
 
 var _ interfacemedia.ServiceMediaInterface = (*ServiceMedia)(nil)
