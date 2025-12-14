@@ -16,10 +16,12 @@ import (
 	pillarHandler "teamleader-management/internal/handlers/http/pillar"
 	roleHandler "teamleader-management/internal/handlers/http/role"
 	sessionHandler "teamleader-management/internal/handlers/http/session"
+	tlHandler "teamleader-management/internal/handlers/http/tl"
 	userHandler "teamleader-management/internal/handlers/http/user"
 	authRepo "teamleader-management/internal/repositories/auth"
 	datasetRepo "teamleader-management/internal/repositories/dataset"
 	kpiRepo "teamleader-management/internal/repositories/kpiitem"
+	mediaRepo "teamleader-management/internal/repositories/media"
 	menuRepo "teamleader-management/internal/repositories/menu"
 	metricRepo "teamleader-management/internal/repositories/metric"
 	permissionRepo "teamleader-management/internal/repositories/permission"
@@ -27,15 +29,24 @@ import (
 	pillarRepo "teamleader-management/internal/repositories/pillar"
 	roleRepo "teamleader-management/internal/repositories/role"
 	sessionRepo "teamleader-management/internal/repositories/session"
+	tlActivityRepo "teamleader-management/internal/repositories/tlactivity"
+	tlAttendanceRepo "teamleader-management/internal/repositories/tlattendance"
+	tlSessionRepo "teamleader-management/internal/repositories/tlsession"
+	tlTrainingRepo "teamleader-management/internal/repositories/tltraining"
 	userRepo "teamleader-management/internal/repositories/user"
 	datasetSvc "teamleader-management/internal/services/dataset"
 	kpiSvc "teamleader-management/internal/services/kpiitem"
+	mediaSvc "teamleader-management/internal/services/media"
 	menuSvc "teamleader-management/internal/services/menu"
 	permissionSvc "teamleader-management/internal/services/permission"
 	personSvc "teamleader-management/internal/services/person"
 	pillarSvc "teamleader-management/internal/services/pillar"
 	roleSvc "teamleader-management/internal/services/role"
 	sessionSvc "teamleader-management/internal/services/session"
+	tlActivitySvc "teamleader-management/internal/services/tlactivity"
+	tlAttendanceSvc "teamleader-management/internal/services/tlattendance"
+	tlSessionSvc "teamleader-management/internal/services/tlsession"
+	tlTrainingSvc "teamleader-management/internal/services/tltraining"
 	userSvc "teamleader-management/internal/services/user"
 	"teamleader-management/middlewares"
 	"teamleader-management/pkg/logger"
@@ -311,4 +322,71 @@ func (r *Routes) SessionRoutes() {
 	}
 
 	logger.WriteLog(logger.LogLevelInfo, "Session management routes registered")
+}
+
+func (r *Routes) TLRoutes() {
+	// Initialize repositories
+	mediaRepository := mediaRepo.NewMediaRepo(r.DB)
+	activityRepo := tlActivityRepo.NewTLActivityRepo(r.DB)
+	attendanceRepo := tlAttendanceRepo.NewTLAttendanceRepo(r.DB)
+	sessionRepo := tlSessionRepo.NewTLSessionRepo(r.DB)
+	trainingRepo := tlTrainingRepo.NewTLTrainingRepo(r.DB)
+
+	// Initialize services
+	mediaService := mediaSvc.NewMediaService(mediaRepository)
+	activityService := tlActivitySvc.NewTLActivityService(activityRepo, mediaService)
+	attendanceService := tlAttendanceSvc.NewTLAttendanceService(attendanceRepo)
+	sessionService := tlSessionSvc.NewTLSessionService(sessionRepo, mediaService)
+	trainingService := tlTrainingSvc.NewTLTrainingService(trainingRepo)
+
+	// Initialize handlers
+	activityHandler := tlHandler.NewTLActivityHandler(activityService)
+	attendanceHandler := tlHandler.NewTLAttendanceHandler(attendanceService)
+	sessionHandler := tlHandler.NewTLSessionHandler(sessionService)
+	trainingHandler := tlHandler.NewTLTrainingHandler(trainingService)
+
+	// Initialize middleware
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	pRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
+
+	// TL Daily Activity Routes
+	activity := r.App.Group("/api/tl/activity").Use(mdw.AuthMiddleware())
+	{
+		activity.POST("", mdw.PermissionMiddleware("tl_activities", "create"), activityHandler.Create)
+		activity.GET("", mdw.PermissionMiddleware("tl_activities", "list"), activityHandler.GetAll)
+		activity.GET("/:id", mdw.PermissionMiddleware("tl_activities", "view"), activityHandler.GetByID)
+		activity.PUT("/:id", mdw.PermissionMiddleware("tl_activities", "update"), activityHandler.Update)
+		activity.DELETE("/:id", mdw.PermissionMiddleware("tl_activities", "delete"), activityHandler.Delete)
+	}
+
+	// TL Attendance Routes
+	attendance := r.App.Group("/api/tl/attendance").Use(mdw.AuthMiddleware())
+	{
+		attendance.POST("", mdw.PermissionMiddleware("tl_attendance", "create"), attendanceHandler.Create)
+		attendance.GET("", mdw.PermissionMiddleware("tl_attendance", "list"), attendanceHandler.GetAll)
+		attendance.GET("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "view"), attendanceHandler.GetByRecordUniqueId)
+		attendance.PUT("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "update"), attendanceHandler.Update)
+		attendance.DELETE("/:record_unique_id", mdw.PermissionMiddleware("tl_attendance", "delete"), attendanceHandler.Delete)
+	}
+
+	// TL Session Routes (Merged Coaching & Briefing)
+	session := r.App.Group("/api/tl/session").Use(mdw.AuthMiddleware())
+	{
+		session.POST("", mdw.PermissionMiddleware("tl_sessions", "create"), sessionHandler.Create)
+		session.GET("", mdw.PermissionMiddleware("tl_sessions", "list"), sessionHandler.GetAll)
+		session.GET("/:id", mdw.PermissionMiddleware("tl_sessions", "view"), sessionHandler.GetByID)
+		session.PUT("/:id", mdw.PermissionMiddleware("tl_sessions", "update"), sessionHandler.Update)
+		session.DELETE("/:id", mdw.PermissionMiddleware("tl_sessions", "delete"), sessionHandler.Delete)
+	}
+
+	// TL Training Participation Routes
+	training := r.App.Group("/api/tl/training").Use(mdw.AuthMiddleware())
+	{
+		training.POST("", mdw.PermissionMiddleware("tl_training", "create"), trainingHandler.Create)
+		training.GET("", mdw.PermissionMiddleware("tl_training", "list"), trainingHandler.GetAll)
+		training.GET("/:training_batch", mdw.PermissionMiddleware("tl_training", "view"), trainingHandler.GetByTrainingBatch)
+	}
+
+	logger.WriteLog(logger.LogLevelInfo, "Team Leader input routes registered")
 }

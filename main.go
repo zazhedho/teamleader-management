@@ -91,6 +91,7 @@ func main() {
 	routes.KPIItemRoutes()
 	routes.DatasetRoutes()
 	routes.PersonRoutes()
+	routes.TLRoutes()
 
 	// Register session routes if Redis is available
 	if redisClient != nil {
