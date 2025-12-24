@@ -9,7 +9,9 @@ import (
 
 	"teamleader-management/infrastructure/database"
 	"teamleader-management/infrastructure/media"
+	dashboardHandler "teamleader-management/internal/handlers/http/dashboard"
 	datasetHandler "teamleader-management/internal/handlers/http/dataset"
+	evaluationHandler "teamleader-management/internal/handlers/http/evaluation"
 	kpiHandler "teamleader-management/internal/handlers/http/kpiitem"
 	menuHandler "teamleader-management/internal/handlers/http/menu"
 	permissionHandler "teamleader-management/internal/handlers/http/permission"
@@ -21,6 +23,7 @@ import (
 	userHandler "teamleader-management/internal/handlers/http/user"
 	authRepo "teamleader-management/internal/repositories/auth"
 	datasetRepo "teamleader-management/internal/repositories/dataset"
+	evaluationRepo "teamleader-management/internal/repositories/evaluation"
 	kpiRepo "teamleader-management/internal/repositories/kpiitem"
 	mediaRepo "teamleader-management/internal/repositories/media"
 	menuRepo "teamleader-management/internal/repositories/menu"
@@ -35,7 +38,9 @@ import (
 	tlSessionRepo "teamleader-management/internal/repositories/tlsession"
 	tlTrainingRepo "teamleader-management/internal/repositories/tltraining"
 	userRepo "teamleader-management/internal/repositories/user"
+	dashboardSvc "teamleader-management/internal/services/dashboard"
 	datasetSvc "teamleader-management/internal/services/dataset"
+	evaluationSvc "teamleader-management/internal/services/evaluation"
 	kpiSvc "teamleader-management/internal/services/kpiitem"
 	mediaSvc "teamleader-management/internal/services/media"
 	menuSvc "teamleader-management/internal/services/menu"
@@ -404,4 +409,83 @@ func (r *Routes) TLRoutes() {
 	}
 
 	logger.WriteLog(logger.LogLevelInfo, "Team Leader input routes registered")
+}
+
+func (r *Routes) EvaluationRoutes() {
+	// Initialize repositories
+	evalRepo := evaluationRepo.NewEvaluationRepo(r.DB)
+
+	// Initialize services
+	evalService := evaluationSvc.NewEvaluationService(evalRepo, r.DB)
+
+	// Initialize handlers
+	evalHandler := evaluationHandler.NewEvaluationHandler(evalService)
+
+	// Initialize middleware
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	pRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
+
+	// Evaluation Routes
+	evaluation := r.App.Group("/api/evaluation").Use(mdw.AuthMiddleware())
+	{
+		// Calculate evaluation (admin only)
+		evaluation.POST("/calculate", mdw.PermissionMiddleware("evaluations", "create"), evalHandler.CalculateEvaluation)
+
+		// Recalculate evaluation (admin only)
+		evaluation.POST("/recalculate", mdw.PermissionMiddleware("evaluations", "update"), evalHandler.RecalculateEvaluation)
+
+		// Get evaluation by ID
+		evaluation.GET("/:id", mdw.PermissionMiddleware("evaluations", "view"), evalHandler.GetByID)
+
+		// Get evaluation for a specific person and period
+		evaluation.GET("/person/:person_id", mdw.PermissionMiddleware("evaluations", "view"), evalHandler.GetByPersonAndPeriod)
+
+		// List all evaluations
+		evaluation.GET("", mdw.PermissionMiddleware("evaluations", "list"), evalHandler.GetAll)
+
+		// Get leaderboard (TLs can view)
+		evaluation.GET("/leaderboard", mdw.PermissionMiddleware("evaluations", "leaderboard"), evalHandler.GetLeaderboard)
+	}
+
+	logger.WriteLog(logger.LogLevelInfo, "Evaluation routes registered")
+}
+
+func (r *Routes) DashboardRoutes() {
+	// Initialize repositories
+	evalRepo := evaluationRepo.NewEvaluationRepo(r.DB)
+
+	// Initialize services
+	tlDashboardService := dashboardSvc.NewTLDashboardService(r.DB, evalRepo)
+	adminAnalyticsService := dashboardSvc.NewAdminAnalyticsService(r.DB, evalRepo)
+
+	// Initialize handlers
+	dashHandler := dashboardHandler.NewDashboardHandler(tlDashboardService, adminAnalyticsService)
+
+	// Initialize middleware
+	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
+	pRepo := permissionRepo.NewPermissionRepo(r.DB)
+	mdw := middlewares.NewMiddleware(blacklistRepo, pRepo)
+
+	// Dashboard Routes
+	dashboard := r.App.Group("/api/dashboard").Use(mdw.AuthMiddleware())
+	{
+		// TL's own dashboard (any authenticated TL can view their own)
+		dashboard.GET("/me", dashHandler.GetMyDashboard)
+
+		// Admin can view any TL's dashboard
+		dashboard.GET("/:person_id", mdw.PermissionMiddleware("dashboards", "view"), dashHandler.GetDashboardByPersonId)
+	}
+
+	// Analytics Routes (admin only)
+	analytics := r.App.Group("/api/analytics").Use(mdw.AuthMiddleware())
+	{
+		// Get comprehensive analytics
+		analytics.GET("", mdw.PermissionMiddleware("analytics", "view"), dashHandler.GetAnalytics)
+
+		// Compare multiple TLs
+		analytics.POST("/compare", mdw.PermissionMiddleware("analytics", "view"), dashHandler.CompareTeam)
+	}
+
+	logger.WriteLog(logger.LogLevelInfo, "Dashboard and analytics routes registered")
 }

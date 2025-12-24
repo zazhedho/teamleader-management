@@ -92,6 +92,8 @@ func main() {
 	routes.DatasetRoutes()
 	routes.PersonRoutes()
 	routes.TLRoutes()
+	routes.EvaluationRoutes()
+	routes.DashboardRoutes()
 
 	// Register session routes if Redis is available
 	if redisClient != nil {
